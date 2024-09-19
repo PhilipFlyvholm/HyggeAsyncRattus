@@ -33,18 +33,12 @@ mMap f (SigMaybe (s ::: xs)) =
         Nothing' -> SigMaybe (Nothing' ::: delay (unSigMaybe (mMap f (SigMaybe (adv xs)))))
         Just' a ->  SigMaybe (Just' (unbox f a) ::: delay (unSigMaybe (mMap f (SigMaybe (adv xs)))))
 
--- We got it to working with
--- data SigMaybe a = Maybe' a ::: O (SigMaybe a)
-
--- this does not work 
--- newtype SigMaybe a = SigMaybe (Sig (Maybe' a))
- 
--- mMap :: Box (a -> b) -> SigMaybe a -> SigMaybe b
--- mMap f (SigMaybe (s ::: xs)) = 
-    -- case s of
-        -- Nothing' -> Nothing' ::: delay (mMap f (adv xs))
-        -- Just' a ->  Just' (unbox f a) ::: delay (mMap f (adv xs))
-
+mScan :: Stable b => Box (b -> a -> b) -> b -> SigMaybe a -> SigMaybe b
+mScan f acc (SigMaybe (x ::: xs)) =
+    case x of 
+        Nothing' -> SigMaybe (Nothing' ::: delay (unSigMaybe (mScan f acc (SigMaybe (adv xs)))))
+        Just' a  -> SigMaybe (Just' acc' ::: delay (unSigMaybe (mScan f acc (SigMaybe (adv xs)))))
+            where acc' = unbox f acc a
 
 main :: IO ()
 main = do
