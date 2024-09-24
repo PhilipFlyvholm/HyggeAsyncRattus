@@ -36,18 +36,12 @@ mMap f =
     )
 
 mScan :: (Stable b) => Box (b -> a -> b) -> b -> SigMaybe a -> SigMaybe b
-mScan f acc (x ::: xs) =
-  case x of
-    Nothing' -> Nothing' ::: delay (mScan f acc (adv xs))
-    Just' a -> Just' acc' ::: delay (mScan f acc (adv xs))
-      where
-        acc' = unbox f acc a
+mScan f acc (Just' a ::: xs) = Just' (unbox f acc a) ::: delay (mScan f acc (adv xs))
+mScan f acc (Nothing' ::: xs) = Nothing' ::: delay (mScan f acc (adv xs))
 
 mFilter :: Box (a -> Bool) -> SigMaybe a -> SigMaybe a
-mFilter f (s ::: xs) =
-  case s of
-    Just' a -> (if unbox f a then Just' a else Nothing') ::: delay (mFilter f (adv xs))
-    Nothing' -> Nothing' ::: delay (mFilter f (adv xs))
+mFilter f (Just' a ::: xs) = (if unbox f a then Just' a else Nothing') ::: delay (mFilter f (adv xs))
+mFilter f (Nothing' ::: xs) = Nothing' ::: delay (mFilter f (adv xs))
 
 main :: IO ()
 main = do
