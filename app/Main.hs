@@ -1,7 +1,7 @@
 {-# HLINT ignore "Avoid lambda" #-}
-{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS -fplugin=AsyncRattus.Plugin #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Redundant bracket" #-}
 
 module Main where
 
@@ -9,39 +9,20 @@ import AsyncRattus
 import AsyncRattus.Channels
 import AsyncRattus.Signal
 import Prelude hiding (init)
+import SigMaybe
+import Data.Time
 
-everySecond :: Box (O ()) -- Box makes the function stable and O() is a delayed unit
-everySecond = timer 1000000 -- 1 second = 1.000.000 microseconds
+type Time = Data.Time.UTCTime
 
-everySecondSig :: Sig ()
-everySecondSig = () AsyncRattus.Signal.::: mkSig everySecond
+type Ô a = O(a, Time)
 
-setPrint :: (Producer p a, Show a) => p -> IO ()
-setPrint sig = setOutput sig print
+data Fun t a = K a | Fun (t -> a)
 
--- Scan http://www.zvon.org/other/haskell/Outputprelude/scanl_f.html
-nats :: Int -> SigMaybe Int
-nats init = scan (box (\_ _ -> Just' 1)) (Just' init) everySecondSig
+apply :: Fun t a -> (t -> a)
+apply (K a) = Prelude.const a
+apply (Fun f) = f
 
-type SigMaybe a = (Sig (Maybe' a))
-
-mMap :: Box (a -> b) -> SigMaybe a -> SigMaybe b
-mMap f =
-  AsyncRattus.Signal.map
-    ( box
-        ( \case
-            Just' x -> Just' (unbox f x)
-            Nothing' -> Nothing'
-        )
-    )
-
-mScan :: (Stable b) => Box (b -> a -> b) -> b -> SigMaybe a -> SigMaybe b
-mScan f acc (Just' a ::: xs) = Just' (unbox f acc a) ::: delay (mScan f acc (adv xs))
-mScan f acc (Nothing' ::: xs) = Nothing' ::: delay (mScan f acc (adv xs))
-
-mFilter :: Box (a -> Bool) -> SigMaybe a -> SigMaybe a
-mFilter f (Just' a ::: xs) = (if unbox f a then Just' a else Nothing') ::: delay (mFilter f (adv xs))
-mFilter f (Nothing' ::: xs) = Nothing' ::: delay (mFilter f (adv xs))
+data Behaviour a = (Fun Time a) :+: Ô(Behaviour a)
 
 main :: IO ()
 main = do
