@@ -35,18 +35,8 @@ mapB f (Fun t :+: xs) = Fun (\t' -> unbox f (t t')) :+: delay (let (b', t') = ad
 -- mFilter f (Just' a ::: xs) = (if unbox f a then Just' a else Nothing') ::: delay (mFilter f (adv xs))
 -- mFilter f (Nothing' ::: xs) = Nothing' ::: delay (mFilter f (adv xs))
 
-filterB :: Box (a -> Bool) -> Behaviour a -> Behaviour a
-filterB f (K a :+: xs) =
-  if unbox f a
-    then K a :+: delay (let (b', t) = adv xs in (filterB f b', t))
-    else delay (let (b', t) = adv xs in (filterB f b'))
-filterB f (Fun t :+: xs) =
-  Fun(\t' ->
-      if unbox f (t t')
-        then Fun t :+: delay (let (b', t') = adv xs in (filterB f b', t'))
-        else filterB f xs -- <-- this doesnt work... We need call filter on the next element.
-  )
-  :+: xs
+filterB :: Box (a -> Bool) -> Behaviour a -> Behaviour (Maybe' a)
+filterB f = mapB (box (\x -> if unbox f x then Just' x else Nothing'))
 
 main :: IO ()
 main = do
