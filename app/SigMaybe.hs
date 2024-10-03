@@ -41,3 +41,8 @@ mScan f acc (Nothing' ::: xs) = Nothing' ::: delay (mScan f acc (adv xs))
 mFilter :: Box (a -> Bool) -> SigMaybe a -> SigMaybe a
 mFilter f (Just' a ::: xs) = (if unbox f a then Just' a else Nothing') ::: delay (mFilter f (adv xs))
 mFilter f (Nothing' ::: xs) = Nothing' ::: delay (mFilter f (adv xs))
+
+{- mInterleave :: Box ([a] -> a) -> [O (Sig a)] -> O(Sig a)
+mInterleave f [s] = s
+mInterleave f (x:xs) = interleave (f x (mInterleave f xs)) -}
+
