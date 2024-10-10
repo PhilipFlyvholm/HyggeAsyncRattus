@@ -62,6 +62,7 @@ executable AsyncRattusTest
 
     -- Modules included in this executable, other than Main.
     other-modules:    SigMaybe,
+                      Behaviour,
                       Testing
 
     -- LANGUAGE extensions used by modules in this package.
