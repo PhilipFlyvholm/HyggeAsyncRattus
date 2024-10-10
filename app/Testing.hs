@@ -13,6 +13,8 @@ myDel t x = Delay (singletonClock 0) (const (x :* t))
 beh :: Int -> Behaviour Int
 beh n = K n :+: myDel n (beh (n + n))
 
+--test_beh n = K n :+: myDel n ((K n+1) :+: (myDel n+1 (beh n)))
+
 beh' :: Int -> Behaviour Int
 beh' n = Fun (box id) :+: myDel n (beh' (n + n))
 
@@ -22,5 +24,5 @@ evalFun (K a) _t = a
 
 -- Sample every_x_tick amount_of_samples behavior
 sample :: (Stable a) => Int -> Behaviour a -> [Time :* a]
-sample 0 (b :+: (Delay cl f)) = let (_b' :* t) = f (InputValue 0 cl) in [t :* evalFun b t]
-sample amountOfSamples (b :+: (Delay cl f)) = let (b' :* t) = f (InputValue 0 cl) in (t :* evalFun b t) : sample (amountOfSamples - 1) b'
+sample 0 (b :+: (Delay cl later)) = let (_b' :* t) = later (InputValue 0 cl) in [t :* evalFun b t]
+sample amountOfSamples (b :+: (Delay cl later)) = let (b' :* t) = later (InputValue 0 cl) in (t :* evalFun b t) : sample (amountOfSamples - 1) b'
