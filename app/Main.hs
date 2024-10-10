@@ -8,9 +8,13 @@ import AsyncRattus.Signal
 import SigMaybe
 import Prelude hiding (init)
 import Testing
+import Behaviour
+
+zippedBeh :: Behaviour Int
+zippedBeh = Behaviour.zipWith (box (+)) (beh 1) (beh' 2)
 
 main :: IO ()
 main = do
-  showNat <- trigger (box (\_ (Just' n) -> sample 5 (beh' n))) everySecondSig (mMap (box (+ 1)) (nats 0))
+  showNat <- trigger (box (\_ _ -> sample 5 zippedBeh)) everySecondSig (mMap (box (+ 1)) (nats 0))
   setPrint showNat
   startEventLoop
