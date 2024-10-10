@@ -6,14 +6,28 @@ module Testing where
 import AsyncRattus.InternalPrimitives
 import AsyncRattus.Strict
 import Behaviour (Behaviour (..), Fun (..), Time, Ô)
+import qualified Data.IntSet as IntSet
+import System.Random (RandomGen, uniformR)
+import Prelude hiding (max, min)
 
 myDel :: Time -> a -> Ô a
 myDel t x = Delay (singletonClock 0) (const (x :* t))
-
 beh :: Int -> Behaviour Int
 beh n = K n :+: myDel n (beh (n + n))
 
---test_beh n = K n :+: myDel n ((K n+1) :+: (myDel n+1 (beh n)))
+myDelA :: Time -> a -> Ô a
+myDelA t x = Delay (IntSet.fromList [0, 1]) (const (x :* t))
+
+behA :: Int -> Behaviour Int
+behA n = K n :+: myDelA n (behA n)
+
+myDelB :: Time -> a -> Ô a
+myDelB t x = Delay (IntSet.fromList [1, 2]) (const (x :* t))
+
+behB :: Int -> Behaviour Int
+behB n = K n :+: myDelB n (behB n)
+
+-- test_beh n = K n :+: myDel n ((K n+1) :+: (myDel n+1 (beh n)))
 
 beh' :: Int -> Behaviour Int
 beh' n = Fun (box id) :+: myDel n (beh' (n + n))
@@ -23,6 +37,20 @@ evalFun (Fun a) t = unbox a t
 evalFun (K a) _t = a
 
 -- Sample every_x_tick amount_of_samples behavior
-sample :: (Stable a) => Int -> Behaviour a -> [Time :* a]
-sample 0 (b :+: (Delay cl later)) = let (_b' :* t) = later (InputValue 0 cl) in [t :* evalFun b t]
-sample amountOfSamples (b :+: (Delay cl later)) = let (b' :* t) = later (InputValue 0 cl) in (t :* evalFun b t) : sample (amountOfSamples - 1) b'
+sample :: (Stable a, RandomGen g) => Int -> Behaviour a -> g -> [Time :* a]
+sample 0 (b :+: (Delay cl later)) gen =
+  let (randomValue, _) = randomFromIntSetPure cl gen
+      (_b' :* t) = later (InputValue randomValue cl)
+   in [t :* evalFun b t]
+sample amountOfSamples (b :+: (Delay cl later)) gen =
+  let (randomValue, newGen) = randomFromIntSetPure cl gen
+      (b' :* t) = later (InputValue randomValue cl)
+   in (t :* evalFun b t) : sample (amountOfSamples - 1) b' newGen
+
+randomFromIntSetPure :: (RandomGen g) => IntSet.IntSet -> g -> (Int, g)
+randomFromIntSetPure intSet gen
+  | IntSet.null intSet = (0, gen)
+  | otherwise =
+      let elems = IntSet.toList intSet
+          (randomIdx, newGen) = uniformR (0, length elems - 1) gen
+       in (elems !! randomIdx, newGen)
