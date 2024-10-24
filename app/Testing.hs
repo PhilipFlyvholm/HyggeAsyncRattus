@@ -26,7 +26,7 @@ myDelA :: Time -> a -> Ô a
 myDelA t x = Delay (IntSet.fromList [0, 1]) (const (x :* t))
 
 behA :: Int -> Behaviour Int
-behA n = K n :+: myDelA getTimeUnsafe (behA n)
+behA n = K n :+: myDelA getTimeUnsafe (behA (n+n))
 
 myDelB :: Time -> a -> Ô a
 myDelB t x = Delay (IntSet.fromList [1, 2]) (const (x :* t))

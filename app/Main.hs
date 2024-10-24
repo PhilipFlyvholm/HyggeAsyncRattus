@@ -1,5 +1,7 @@
 
 {-# OPTIONS -fplugin=AsyncRattus.Plugin #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Main where
 
 import AsyncRattus
