@@ -4,7 +4,8 @@
 module Behaviour where
 import AsyncRattus
 import Prelude hiding (zipWith, map)
-type Time = Int
+import Data.Time (UTCTime)
+type Time = UTCTime
 
 type Ô a = O (a :* Time)
 
@@ -19,6 +20,7 @@ data Behaviour a = !(Fun Time a) :+: !(Ô (Behaviour a))
 map :: Box (a -> b) -> Behaviour a -> Behaviour b
 map f ((K a) :+: xs) = K (unbox f a) :+: delay (let (b' :* t) = adv xs in (map f b' :* t))
 map f ((Fun t) :+: xs) = Fun (box (unbox f . unbox t)) :+: delay (let (b' :* t'') = adv xs in (map f b' :* t''))
+
 -- Make it filter events instead or make this into a ceil function
 filter :: Box (a -> Bool) -> Behaviour a -> Behaviour (Maybe' a)
 filter f = map (box (\x -> if unbox f x then Just' x else Nothing'))
@@ -44,13 +46,3 @@ switch (x :+: xs) d = x :+: delay (
         Snd _ d' -> d'
         Both _ d' -> d'
     )
-
-data Event a = !a :&: !(Ô(Event a))
-
-triggerAwait :: Stable b => Box(a->b->c) -> Ô(Event a) -> Behaviour b -> Ô(Event(Maybe' c))
-triggerAwait f as (b :+: bs) = 
-    delay (case select as bs of 
-            Fst (a' :&: as' :* t) bs' -> Just' (unbox f a' (apply b t)) :&: triggerAwait f as' (b :+: bs') :* t
-            Snd as' (bs' :* t) -> Nothing' :&: triggerAwait f as' bs' :* t
-            Both (a' :&: as' :* at) (b' :+: bs' :* bt) -> Just' (unbox f a' (apply b' bt)) :&: triggerAwait f as' (b' :+: bs') :* max at bt
-        )

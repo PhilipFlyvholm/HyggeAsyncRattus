@@ -9,28 +9,35 @@ import Behaviour (Behaviour (..), Fun (..), Time, Ô)
 import qualified Data.IntSet as IntSet
 import System.Random (RandomGen, uniformR)
 import Prelude hiding (max, min)
+import Data.Time (getCurrentTime)
+import GHC.IO (unsafePerformIO)
+
+{-# NOINLINE getTimeUnsafe #-}
+getTimeUnsafe :: Time
+getTimeUnsafe = unsafePerformIO getCurrentTime
 
 myDel :: Time -> a -> Ô a
 myDel t x = Delay (singletonClock 0) (const (x :* t))
+
 beh :: Int -> Behaviour Int
-beh n = K n :+: myDel n (beh (n + n))
+beh n = K n :+: myDel getTimeUnsafe (beh (n + n))
 
 myDelA :: Time -> a -> Ô a
 myDelA t x = Delay (IntSet.fromList [0, 1]) (const (x :* t))
 
 behA :: Int -> Behaviour Int
-behA n = K n :+: myDelA n (behA n)
+behA n = K n :+: myDelA getTimeUnsafe (behA n)
 
 myDelB :: Time -> a -> Ô a
 myDelB t x = Delay (IntSet.fromList [1, 2]) (const (x :* t))
 
 behB :: Int -> Behaviour Int
-behB n = K n :+: myDelB n (behB n)
+behB n = K n :+: myDelB getTimeUnsafe (behB n)
 
 -- test_beh n = K n :+: myDel n ((K n+1) :+: (myDel n+1 (beh n)))
 
 beh' :: Int -> Behaviour Int
-beh' n = Fun (box id) :+: myDel n (beh' (n + n))
+beh' n = Fun (box (\t -> n)) :+: myDel getTimeUnsafe (beh' (n + n))
 
 evalFun :: Fun Time t2 -> Time -> t2
 evalFun (Fun a) t = unbox a t
