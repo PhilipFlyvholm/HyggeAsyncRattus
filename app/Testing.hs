@@ -9,12 +9,12 @@ import Behaviour (Behaviour (..), Fun (..), Time, Ô)
 import qualified Data.IntSet as IntSet
 import System.Random (RandomGen, uniformR)
 import Prelude hiding (max, min)
-import Data.Time (getCurrentTime)
 import GHC.IO (unsafePerformIO)
+import Strict (getCurrentStrictTime)
 
 {-# NOINLINE getTimeUnsafe #-}
 getTimeUnsafe :: Time
-getTimeUnsafe = unsafePerformIO getCurrentTime
+getTimeUnsafe = unsafePerformIO getCurrentStrictTime
 
 myDel :: Time -> a -> Ô a
 myDel t x = Delay (singletonClock 0) (const (x :* t))

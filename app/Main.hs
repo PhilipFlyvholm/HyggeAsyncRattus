@@ -1,6 +1,5 @@
 
 {-# OPTIONS -fplugin=AsyncRattus.Plugin #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Main where
 
@@ -12,7 +11,7 @@ import Prelude hiding (init)
 import Testing
 import Behaviour
 import System.Random (mkStdGen, StdGen)
-import Data.Time ( getCurrentTime )
+import Strict (getCurrentStrictTime)
 
 
 zippedBeh :: Behaviour Int
@@ -28,7 +27,7 @@ main :: IO ()
 main = do
   -- showNat <- trigger (box (\_ _ -> sample 5 zippedBeh gen)) everySecondSig (mMap (box (+ 1)) (nats 0))
   showNat <- trigger (box (\_ _ -> sample 5 zippedOverlappingBeh gen)) everySecondSig (mMap (box (+ 1)) (nats 0))
-  currentTime <- getCurrentTime
+  currentTime <- getCurrentStrictTime
   print currentTime
   setPrint showNat
   startEventLoop
