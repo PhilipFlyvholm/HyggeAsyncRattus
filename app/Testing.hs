@@ -37,7 +37,7 @@ behB n = K n :+: myDelB getTimeUnsafe (behB n)
 -- test_beh n = K n :+: myDel n ((K n+1) :+: (myDel n+1 (beh n)))
 
 beh' :: Int -> Behaviour Int
-beh' n = Fun (box (\t -> n)) :+: myDel getTimeUnsafe (beh' (n + n))
+beh' n = Fun (box (const n)) :+: myDel getTimeUnsafe (beh' (n + n))
 
 evalFun :: Fun Time t2 -> Time -> t2
 evalFun (Fun a) t = unbox a t

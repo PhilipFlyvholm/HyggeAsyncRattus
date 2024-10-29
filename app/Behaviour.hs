@@ -4,7 +4,8 @@
 module Behaviour where
 import AsyncRattus
 import Prelude hiding (zipWith, map)
-import Data.Time (UTCTime)
+import Data.Time (UTCTime, getCurrentTime)
+import AsyncRattus.Channels (getInput)
 type Time = UTCTime
 
 type Ô a = O (a :* Time)
@@ -46,3 +47,9 @@ switch (x :+: xs) d = x :+: delay (
         Snd _ d' -> d'
         Both _ d' -> d'
     )
+-- Box (Ô a) x -> O ()
+getInpût :: IO (Box (Ô a) :* (a -> IO ())) 
+getInpût =  do 
+              (b :* f) <- getInput
+              return (b :* \a -> do t <- getCurrentTime
+                                    f (a :* t))
