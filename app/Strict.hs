@@ -3,8 +3,9 @@
 module Strict where
 
 import Data.Time.Clock
-    ( getCurrentTime, DiffTime, UTCTime(UTCTime) )
+    ( getCurrentTime, DiffTime, UTCTime(UTCTime), diffUTCTime, NominalDiffTime )
 import Data.Time.Calendar ( Day )
+import AsyncRattus (Stable)
 
 -- | A strict version of UTCTime
 data UTCTime' = UTCTime'
@@ -28,6 +29,11 @@ getCurrentStrictTime = do
     UTCTime day time <- getCurrentTime
     return $ UTCTime' day time
 
+diffUTCTime' :: UTCTime' -> UTCTime' -> NominalDiffTime
+diffUTCTime' t1 t2 = diffUTCTime (toUTCTime t1) (toUTCTime t2)
+
 -- Make it show like regular UTCTime
 instance Show UTCTime' where
     show = show . toUTCTime
+
+instance Stable UTCTime'
