@@ -1,6 +1,6 @@
 module Main where
 
-import ZippedWithTest
+--import ZippedWithTest
 import Console
 
 main :: IO ()

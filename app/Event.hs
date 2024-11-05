@@ -1,6 +1,6 @@
 {-# OPTIONS -fplugin=AsyncRattus.Plugin #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
+
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -50,7 +50,7 @@ trigger f (a :&: as) bs@(b :+: _) = do
   let l = box (unbox f a (apply b getTimeUnsafe))
   return (box (Just' (unbox l) :&: unbox s))
 
-triggerAwait :: (Stable b) => Box (a -> b -> c) -> Ô (Event a) -> Behaviour b -> (Ô (Event (Maybe' c)))
+triggerAwait :: (Stable b) => Box (a -> b -> c) -> Ô (Event a) -> Behaviour b -> Ô (Event (Maybe' c))
 triggerAwait f as (b :+: bs) =
   delay
     ( case select as bs of
@@ -72,8 +72,9 @@ map f (a :&: xs) = unbox f a :&: delay (let (b' :* t'') = adv xs in (map f b' :*
 filter :: Box (a -> Bool) -> Event a -> IO (Box (Ô (Event a)))
 filter f event = mkInputEvent (EventMaybe (map (box (\x -> if unbox f x then Just' x else Nothing')) event))
 
+
 filterAwait :: Box (a -> Bool) -> Ô (Event a) -> IO (Box (Ô (Event a)))
-filterAwait f event = mkInputEvent (delay (let (e :* _) = (adv event) in (EventMaybe (map (box (\x -> if unbox f x then Just' x else Nothing')) e) )))
+filterAwait f event = mkInputEvent (delay (let (e :* _) = adv event in EventMaybe (map (box (\x -> if unbox f x then Just' x else Nothing')) e)))
 
 -- filterMapAwait :: Box (a -> Maybe' b) -> Ô (Event a) -> IO (Box (Ô (Event b)))
 -- filterMap f s = mkInputEvent ()
