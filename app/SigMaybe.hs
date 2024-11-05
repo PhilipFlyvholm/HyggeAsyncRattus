@@ -15,8 +15,6 @@ everySecond = timer 1000000 -- 1 second = 1.000.000 microseconds
 everySecondSig :: Sig ()
 everySecondSig = () AsyncRattus.Signal.::: mkSig everySecond
 
-setPrint :: (Producer p a, Show a) => p -> IO ()
-setPrint sig = setOutput sig print
 
 -- Scan http://www.zvon.org/other/haskell/Outputprelude/scanl_f.html
 nats :: Int -> SigMaybe Int

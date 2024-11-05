@@ -61,3 +61,4 @@ randomFromIntSetPure intSet gen
       let elems = IntSet.toList intSet
           (randomIdx, newGen) = uniformR (0, length elems - 1) gen
        in (elems !! randomIdx, newGen)
+

@@ -65,7 +65,9 @@ executable AsyncRattusTest
                       Behaviour,
                       Event,
                       Strict,
-                      Testing
+                      Testing,
+                      ZippedWithTest,
+                      Console
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -75,7 +77,8 @@ executable AsyncRattusTest
                       AsyncRattus,
                       time,
                       containers,
-                      random
+                      random,
+                      text
 
     -- Directories containing source files.
     hs-source-dirs:   app
