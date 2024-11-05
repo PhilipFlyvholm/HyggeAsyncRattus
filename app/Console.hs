@@ -32,10 +32,25 @@ setPrint event = setOutput event print
 setQuit :: (Producer p a) => p -> IO ()
 setQuit event = setOutput event (const exitSuccess)
 
+isJust' :: Maybe' a -> Bool
+isJust' (Just' _) = True
+isJust' Nothing' = False
+
+
+
 startConsole :: IO ()
 startConsole = do
   console :: Ô (Event Text) <- unbox <$> consoleInput
-  quitEvent :: Ô (Event Text) <- unbox <$> Event.filterAwait (box (== "quit")) console
+  quitEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "quit")) console
+  showEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "show")) console
+  --resetEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "reset")) console
+
+  currentTimer :: Behaviour Int <- Behaviour.startTimerBehaviour
+
+  showTimerRaw :: Ô (Event (Maybe' Int)) <- unbox <$> triggerAwaitIO (box (\_ n -> n)) showEvent currentTimer
+  showTimer :: Ô (Event Int) <- unbox <$> filterMapAwait (box id) showTimerRaw
+
+  setPrint showTimer
 
   setQuit quitEvent
   startEventLoop
