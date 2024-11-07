@@ -17,7 +17,7 @@ import System.Exit
 
 {-# ANN consoleInput AllowRecursion #-}
 
-consoleInput :: IO (Box (Ô (Event Text)))
+consoleInput :: IO (Box (OT (Event Text)))
 consoleInput = do
          (inp :* cb) <- getInputEvent
          let loop = do line <- getLine
@@ -32,17 +32,17 @@ setPrint event = setOutput event print
 setQuit :: (Producer p a) => p -> IO ()
 setQuit event = setOutput event (const exitSuccess)
 
-getJustValues :: IO (Ô (Event (Maybe' a))) -> IO (Ô (Event a))
+getJustValues :: IO (OT (Event (Maybe' a))) -> IO (OT (Event a))
 getJustValues e = do 
     e' <- e
     unbox <$> filterMapAwait (box id) e'
 
 startConsole :: IO ()
 startConsole = do
-  console :: Ô (Event Text) <- unbox <$> consoleInput
-  quitEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "quit")) console
-  showEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "show")) console
-  resetEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "reset")) console
+  console :: OT (Event Text) <- unbox <$> consoleInput
+  quitEvent :: OT (Event Text) <- unbox <$> filterAwait (box (== "quit")) console
+  showEvent :: OT (Event Text) <- unbox <$> filterAwait (box (== "show")) console
+  resetEvent :: OT (Event Text) <- unbox <$> filterAwait (box (== "reset")) console
 
   startTimer :: Behaviour Int <- Behaviour.startTimerBehaviour
   lastReset :: Behaviour Int <- do
@@ -52,9 +52,8 @@ startConsole = do
   let currentTimer :: Behaviour Int = Behaviour.zipWith (box (-)) startTimer lastReset
   
 
-  showTimer :: Ô (Event Int) <- getJustValues (unbox <$> triggerAwaitIO (box (\_ n -> n)) showEvent currentTimer)
+  showTimer :: OT (Event Int) <- getJustValues (unbox <$> triggerAwaitIO (box (\_ n -> n)) showEvent currentTimer)
  
-
   setPrint showTimer
 
   setQuit quitEvent

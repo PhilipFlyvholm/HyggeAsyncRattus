@@ -8,7 +8,7 @@ import AsyncRattus.Channels
 import Behaviour
 import Console
 import Event
-import Strict (getCurrentStrictTime)
+import StrictUTCTime (getCurrentStrictTime)
 import System.Random (StdGen, mkStdGen)
 import Testing
 import Prelude hiding (init)

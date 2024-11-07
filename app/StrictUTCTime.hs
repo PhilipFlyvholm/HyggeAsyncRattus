@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
-module Strict where
+module StrictUTCTime where
 
 import Data.Time.Clock
     ( getCurrentTime, DiffTime, UTCTime(UTCTime), diffUTCTime, NominalDiffTime )

@@ -5,30 +5,30 @@ module Testing where
 
 import AsyncRattus.InternalPrimitives
 import AsyncRattus.Strict
-import Behaviour (Behaviour (..), Fun (..), Time, Ô)
+import Behaviour (Behaviour (..), Fun (..), Time, OT)
 import qualified Data.IntSet as IntSet
 import System.Random (RandomGen, uniformR)
 import Prelude hiding (max, min)
 import GHC.IO (unsafePerformIO)
-import Strict (getCurrentStrictTime)
+import StrictUTCTime (getCurrentStrictTime)
 
 {-# NOINLINE getTimeUnsafe #-}
 getTimeUnsafe :: Time
 getTimeUnsafe = unsafePerformIO getCurrentStrictTime
 
-myDel :: Time -> a -> Ô a
+myDel :: Time -> a -> OT a
 myDel t x = Delay (singletonClock 0) (const (x :* t))
 
 beh :: Int -> Behaviour Int
 beh n = K n :+: myDel getTimeUnsafe (beh (n + n))
 
-myDelA :: Time -> a -> Ô a
+myDelA :: Time -> a -> OT a
 myDelA t x = Delay (IntSet.fromList [0, 1]) (const (x :* t))
 
 behA :: Int -> Behaviour Int
 behA n = K n :+: myDelA getTimeUnsafe (behA (n+n))
 
-myDelB :: Time -> a -> Ô a
+myDelB :: Time -> a -> OT a
 myDelB t x = Delay (IntSet.fromList [1, 2]) (const (x :* t))
 
 behB :: Int -> Behaviour Int

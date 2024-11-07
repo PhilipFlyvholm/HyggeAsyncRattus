@@ -64,7 +64,7 @@ executable AsyncRattusTest
     other-modules:    SigMaybe,
                       Behaviour,
                       Event,
-                      Strict,
+                      StrictUTCTime,
                       Testing,
                       ZippedWithTest,
                       Console

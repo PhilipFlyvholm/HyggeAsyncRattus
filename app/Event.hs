@@ -15,12 +15,10 @@ import Behaviour hiding (filter, map)
 import Testing (getTimeUnsafe)
 import Prelude hiding (map)
 
-data Event a = !a :&: !(Ô (Event a))
+-- | An event is a discrete time/value pairs 
+data Event a = !a :&: !(OT (Event a))
 
--- instance (Producer p a) => Producer (Ô p) a where
---   getCurrent _ = Nothing'
---   getNext p cb = cb (delay (let (b :* _) = adv p in b))
-
+-- | Event wrapper for Maybe'
 newtype EventMaybe a = EventMaybe (Event (Maybe' a))
 
 instance Producer (EventMaybe a) a where
@@ -35,22 +33,22 @@ instance Producer (Event a :* Time) a where
   getCurrent (p :* _) = Just' (current p)
   getNext (p :* _) cb = cb (delay (let (b :* _) = adv (future p) in b))
 
--- | Get the current value of a signal.
+-- | Get the current value of a Event.
 current :: Event a -> a
 current (x :&: _) = x
 
 -- | Get the future the Event.
-future :: Event a -> Ô (Event a)
+future :: Event a -> OT (Event a)
 future (_ :&: xs) = xs
 
+-- | Trigger an behaviour when a event occurs.
 trigger :: (Stable a, Stable b) => Box (a -> b -> c) -> Event a -> Behaviour b -> IO (Box (Event (Maybe' c)))
 trigger f (a :&: as) bs@(b :+: _) = do
   s <- triggerAwaitIO f as bs
-  -- t <- getCurrentStrictTime
   let l = box (unbox f a (apply b getTimeUnsafe))
   return (box (Just' (unbox l) :&: unbox s))
 
-triggerAwait :: (Stable b) => Box (a -> b -> c) -> Ô (Event a) -> Behaviour b -> Ô (Event (Maybe' c))
+triggerAwait :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> OT (Event (Maybe' c))
 triggerAwait f as (b :+: bs) =
   delay
     ( case select as bs of
@@ -60,53 +58,53 @@ triggerAwait f as (b :+: bs) =
     )
 
 -- make triggerAwaitIO
-triggerAwaitIO :: (Stable b) => Box (a -> b -> c) -> Ô (Event a) -> Behaviour b -> IO (Box (Ô (Event (Maybe' c))))
+triggerAwaitIO :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> IO (Box (OT (Event (Maybe' c))))
 triggerAwaitIO f as bs = do
   let trigResult = triggerAwait f as bs
-  result <- mkInpût trigResult
+  result <- mkInputWithTime trigResult
   return (box (mkEvent result))
 
 map :: Box (a -> b) -> Event a -> Event b
 map f (a :&: xs) = unbox f a :&: delay (let (b' :* t'') = adv xs in (map f b' :* t''))
 
-filterMap :: Box (a -> Maybe' b) -> Event a -> IO (Box (Ô (Event b)))
+filterMap :: Box (a -> Maybe' b) -> Event a -> IO (Box (OT (Event b)))
 filterMap f event = mkInputEvent (EventMaybe (map f event))
 
-filterMapAwait :: Box (a -> Maybe' b) -> Ô (Event a) -> IO (Box (Ô (Event b)))
+filterMapAwait :: Box (a -> Maybe' b) -> OT (Event a) -> IO (Box (OT (Event b)))
 filterMapAwait f event = mkInputEvent (delay (let (e :* _) = adv event in EventMaybe (map f e)))
 
-filter :: Box (a -> Bool) -> Event a -> IO (Box (Ô (Event a)))
+filter :: Box (a -> Bool) -> Event a -> IO (Box (OT (Event a)))
 filter f = filterMap (box (\x -> if unbox f x then Just' x else Nothing'))
 
-filterAwait :: Box (a -> Bool) -> Ô (Event a) -> IO (Box (Ô (Event a)))
+filterAwait :: Box (a -> Bool) -> OT (Event a) -> IO (Box (OT (Event a)))
 filterAwait f = filterMapAwait (box (\x -> if unbox f x then Just' x else Nothing'))
 
-mkEvent :: Box (Ô a) -> Ô (Event a)
+mkEvent :: Box (OT a) -> OT (Event a)
 mkEvent b = delay (let (v :* t) = adv (unbox b) in ((v :&: mkEvent b) :* t))
 
-mkBoxEvent :: Box (Ô a) -> Box (Ô (Event a))
+mkBoxEvent :: Box (OT a) -> Box (OT (Event a))
 mkBoxEvent b = box (mkEvent b)
 
 mkBehaviour :: Event a -> Behaviour a
 mkBehaviour (a :&: as) = K a :+: delay (let (b' :* t) = adv as in (mkBehaviour b' :* t))
 
-mkBehaviourAwait :: Ô (Event a) -> Ô (Behaviour a)
+mkBehaviourAwait :: OT (Event a) -> OT (Behaviour a)
 mkBehaviourAwait as = delay (let (e :* t) = adv as in (mkBehaviour e :* t))
 
 
-timer :: Int -> Box (Ô ())
+timer :: Int -> Box (OT ())
 timer d = Box (Delay (singletonClock (d `max` 10)) (\_ -> () :* getTimeUnsafe))
 
 everySecondEvent :: Event ()
 everySecondEvent = () :&: mkEvent everySecond
 
-everySecond :: Box (Ô ())
+everySecond :: Box (OT ())
 everySecond = timer 1000000
 
-getInputEvent :: IO (Box (Ô (Event a)) :* (a -> IO ()))
+getInputEvent :: IO (Box (OT (Event a)) :* (a -> IO ()))
 getInputEvent = do
-  (b :* f) <- getInpût
+  (b :* f) <- getInputWithTime
   return (mkBoxEvent b :* f)
 
-mkInputEvent :: (Producer p a) => p -> IO (Box (Ô (Event a)))
-mkInputEvent p = mkBoxEvent <$> mkInpût p
+mkInputEvent :: (Producer p a) => p -> IO (Box (OT (Event a)))
+mkInputEvent p = mkBoxEvent <$> mkInputWithTime p

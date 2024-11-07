@@ -8,12 +8,12 @@ module Behaviour where
 
 import AsyncRattus
 import AsyncRattus.Channels (Producer, getInput, setOutput)
-import Strict (UTCTime', diffUTCTime', getCurrentStrictTime)
+import StrictUTCTime (UTCTime', diffUTCTime', getCurrentStrictTime)
 import Prelude hiding (map, zipWith)
 
 type Time = UTCTime'
 
-type Ô a = O (a :* Time)
+type OT a = O (a :* Time)
 
 data Fun t a = K !a | Fun !(Box (t -> a))
 
@@ -21,7 +21,7 @@ apply :: Fun t a -> (t -> a)
 apply (K a) = Prelude.const a
 apply (Fun f) = unbox f
 
-data Behaviour a = !(Fun Time a) :+: !(Ô (Behaviour a))
+data Behaviour a = !(Fun Time a) :+: !(OT (Behaviour a))
 
 timeBehaviour :: Behaviour Time
 timeBehaviour = Fun (box id) :+: never
@@ -30,7 +30,6 @@ map :: Box (a -> b) -> Behaviour a -> Behaviour b
 map f ((K a) :+: xs) = K (unbox f a) :+: delay (let (b' :* t) = adv xs in (map f b' :* t))
 map f ((Fun t) :+: xs) = Fun (box (unbox f . unbox t)) :+: delay (let (b' :* t'') = adv xs in (map f b' :* t''))
 
--- Make it filter events instead or make this into a ceil function
 filter :: Box (a -> Bool) -> Behaviour a -> Behaviour (Maybe' a)
 filter f = map (box (\x -> if unbox f x then Just' x else Nothing'))
 
@@ -49,7 +48,7 @@ zipWith f (a :+: as) (b :+: bs) =
     app (Fun a') (K b') = Fun (box (\t -> unbox f (unbox a' t) b'))
     app (K a') (Fun b') = Fun (box (unbox f a' . unbox b'))
 
-switch :: Behaviour a -> Ô (Behaviour a) -> Behaviour a
+switch :: Behaviour a -> OT (Behaviour a) -> Behaviour a
 switch (x :+: xs) d =
   x
     :+: delay
@@ -59,30 +58,23 @@ switch (x :+: xs) d =
           Both _ d' -> d'
       )
 
--- scan :: (Stable b) => Box (b -> a -> b) -> b -> Behaviour a -> Behaviour b
--- scan f acc (a :+: as) = acc' :+: delay (let (b' :* t) = adv xs in (scan f acc' (adv as)))
---     where
---       acc' = case a of
---         K a' -> K (unbox f acc a')
---         Fun f' -> Fun (box (\t -> unbox f acc (unbox f' t)))
-
 startTimerBehaviour :: IO (Behaviour Int)
 startTimerBehaviour = do
   start <- getCurrentStrictTime
   let b = K start :+: never
   return $ zipWith (box (\currentTime startTime -> round (diffUTCTime' currentTime startTime))) timeBehaviour b
 
-getInpût :: IO (Box (Ô a) :* (a -> IO ()))
-getInpût = do
+getInputWithTime :: IO (Box (OT a) :* (a -> IO ()))
+getInputWithTime = do
   (b :* f) <- getInput
   return
     ( b :* \a -> do
         t <- getCurrentStrictTime
         f (a :* t)
     )
-
-mkInpût :: (Producer p a) => p -> IO (Box (Ô a))
-mkInpût p = do
-  (out :* cb) <- getInpût
+    
+mkInputWithTime :: (Producer p a) => p -> IO (Box (OT a))
+mkInputWithTime p = do
+  (out :* cb) <- getInputWithTime
   setOutput p cb
   return out
