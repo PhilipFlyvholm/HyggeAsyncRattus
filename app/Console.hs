@@ -32,18 +32,28 @@ setPrint event = setOutput event print
 setQuit :: (Producer p a) => p -> IO ()
 setQuit event = setOutput event (const exitSuccess)
 
+getJustValues :: IO (Ô (Event (Maybe' a))) -> IO (Ô (Event a))
+getJustValues e = do 
+    e' <- e
+    unbox <$> filterMapAwait (box id) e'
 
 startConsole :: IO ()
 startConsole = do
   console :: Ô (Event Text) <- unbox <$> consoleInput
   quitEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "quit")) console
   showEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "show")) console
-  --resetEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "reset")) console
+  resetEvent :: Ô (Event Text) <- unbox <$> filterAwait (box (== "reset")) console
 
-  currentTimer :: Behaviour Int <- Behaviour.startTimerBehaviour
+  startTimer :: Behaviour Int <- Behaviour.startTimerBehaviour
+  lastReset :: Behaviour Int <- do
+        n <- getJustValues (unbox <$> triggerAwaitIO (box (\_ n -> n)) resetEvent startTimer)
+        let beh = mkBehaviourAwait n
+        return (switch (K 0 :+: never) beh)
+  let currentTimer :: Behaviour Int = Behaviour.zipWith (box (-)) startTimer lastReset
+  
 
-  showTimerRaw :: Ô (Event (Maybe' Int)) <- unbox <$> triggerAwaitIO (box (\_ n -> n)) showEvent currentTimer
-  showTimer :: Ô (Event Int) <- unbox <$> filterMapAwait (box id) showTimerRaw
+  showTimer :: Ô (Event Int) <- getJustValues (unbox <$> triggerAwaitIO (box (\_ n -> n)) showEvent currentTimer)
+ 
 
   setPrint showTimer
 

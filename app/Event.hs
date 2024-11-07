@@ -90,6 +90,10 @@ mkBoxEvent b = box (mkEvent b)
 mkBehaviour :: Event a -> Behaviour a
 mkBehaviour (a :&: as) = K a :+: delay (let (b' :* t) = adv as in (mkBehaviour b' :* t))
 
+mkBehaviourAwait :: Ô (Event a) -> Ô (Behaviour a)
+mkBehaviourAwait as = delay (let (e :* t) = adv as in (mkBehaviour e :* t))
+
+
 timer :: Int -> Box (Ô ())
 timer d = Box (Delay (singletonClock (d `max` 10)) (\_ -> () :* getTimeUnsafe))
 
