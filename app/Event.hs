@@ -72,11 +72,11 @@ map f (a :&: xs) = unbox f a :&: delay (let (b' :* t'') = adv xs in (map f b' :*
 filterMap :: Box (a -> Maybe' b) -> Event a -> IO (Box (Ô (Event b)))
 filterMap f event = mkInputEvent (EventMaybe (map f event))
 
-filter :: Box (a -> Bool) -> Event a -> IO (Box (Ô (Event a)))
-filter f = filterMap (box (\x -> if unbox f x then Just' x else Nothing'))
-
 filterMapAwait :: Box (a -> Maybe' b) -> Ô (Event a) -> IO (Box (Ô (Event b)))
 filterMapAwait f event = mkInputEvent (delay (let (e :* _) = adv event in EventMaybe (map f e)))
+
+filter :: Box (a -> Bool) -> Event a -> IO (Box (Ô (Event a)))
+filter f = filterMap (box (\x -> if unbox f x then Just' x else Nothing'))
 
 filterAwait :: Box (a -> Bool) -> Ô (Event a) -> IO (Box (Ô (Event a)))
 filterAwait f = filterMapAwait (box (\x -> if unbox f x then Just' x else Nothing'))

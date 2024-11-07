@@ -32,11 +32,6 @@ setPrint event = setOutput event print
 setQuit :: (Producer p a) => p -> IO ()
 setQuit event = setOutput event (const exitSuccess)
 
-isJust' :: Maybe' a -> Bool
-isJust' (Just' _) = True
-isJust' Nothing' = False
-
-
 
 startConsole :: IO ()
 startConsole = do
