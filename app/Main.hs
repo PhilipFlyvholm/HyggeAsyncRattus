@@ -1,8 +1,8 @@
 module Main where
 
---import ZippedWithTest
-import Console
+import ZippedWithTest
+--import Console
 
 main :: IO ()
-main = startConsole
+main = zippedWithTest
 

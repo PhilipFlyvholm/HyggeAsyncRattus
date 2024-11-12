@@ -10,7 +10,8 @@ import qualified Data.IntSet as IntSet
 import System.Random (RandomGen, uniformR)
 import Prelude hiding (max, min)
 import GHC.IO (unsafePerformIO)
-import StrictUTCTime (getCurrentStrictTime)
+import StrictUTCTime (getCurrentStrictTime, addUTCTime')
+
 
 {-# NOINLINE getTimeUnsafe #-}
 getTimeUnsafe :: Time
@@ -43,16 +44,20 @@ evalFun :: Fun Time t2 -> Time -> t2
 evalFun (Fun a) t = unbox a t
 evalFun (K a) _t = a
 
--- Sample every_x_tick amount_of_samples behavior
-sample :: (Stable a, RandomGen g) => Int -> Behaviour a -> g -> [Time :* a]
-sample 0 (b :+: (Delay cl later)) gen =
-  let (randomValue, _) = randomFromIntSetPure cl gen
-      (_b' :* t) = later (InputValue randomValue cl)
-   in [t :* evalFun b t]
-sample amountOfSamples (b :+: (Delay cl later)) gen =
-  let (randomValue, newGen) = randomFromIntSetPure cl gen
-      (b' :* t) = later (InputValue randomValue cl)
-   in (t :* evalFun b t) : sample (amountOfSamples - 1) b' newGen
+
+sample :: (Stable a, RandomGen g) => Int -> Int -> Behaviour a -> g -> [Time :* a]
+sample amount_of_samples every_x_sec = sampleAux amount_of_samples 0 where
+   
+   sampleAux :: (Stable a, RandomGen g) => Int -> Int -> Behaviour a -> g -> [Time :* a]
+   sampleAux 0 timeSince (b :+: (Delay cl later)) gen' =
+         let (randomValue, _) = randomFromIntSetPure cl gen'
+             (_b' :* t) = later (InputValue randomValue cl)
+         in [addUTCTime' (fromIntegral timeSince) t :* evalFun b (addUTCTime' (fromIntegral timeSince) t)]
+
+   sampleAux amountOfSamples timeSince (b :+: (Delay cl later)) gen' =
+         let (randomValue, newGen) = randomFromIntSetPure cl gen'
+             (b' :* t) = later (InputValue randomValue cl)
+         in (addUTCTime' (fromIntegral timeSince) t :* evalFun b (addUTCTime' (fromIntegral timeSince) t)) : sampleAux (amountOfSamples - 1) (timeSince+every_x_sec) b' newGen
 
 randomFromIntSetPure :: (RandomGen g) => IntSet.IntSet -> g -> (Int, g)
 randomFromIntSetPure intSet gen
