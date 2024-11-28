@@ -5,12 +5,13 @@ module Testing where
 
 import AsyncRattus.InternalPrimitives
 import AsyncRattus.Strict
-import Behaviour (Behaviour (..), Fun (..), Time, OT)
+import Behaviour (Behaviour (..))
 import qualified Data.IntSet as IntSet
 import System.Random (RandomGen, uniformR)
 import Prelude hiding (max, min)
 import GHC.IO (unsafePerformIO)
 import StrictUTCTime (getCurrentStrictTime, addUTCTime')
+import Primitives
 
 
 {-# NOINLINE getTimeUnsafe #-}

@@ -8,18 +8,9 @@ module Behaviour where
 
 import AsyncRattus
 import AsyncRattus.Channels (Producer, getInput, setOutput)
-import StrictUTCTime (UTCTime', diffUTCTime', getCurrentStrictTime)
 import Prelude hiding (map, zipWith)
-
-type Time = UTCTime'
-
-type OT a = O (a :* Time)
-
-data Fun t a = K !a | Fun !(Box (t -> a))
-
-apply :: Fun t a -> (t -> a)
-apply (K a) = Prelude.const a
-apply (Fun f) = unbox f
+import StrictUTCTime (UTCTime', diffUTCTime', getCurrentStrictTime)
+import Primitives
 
 data Behaviour a = !(Fun Time a) :+: !(OT (Behaviour a))
 

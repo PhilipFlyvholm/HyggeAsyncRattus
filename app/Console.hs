@@ -14,6 +14,7 @@ import Data.Text.IO
 import Event
 import Prelude hiding (getLine, max, min, filter, map)
 import System.Exit
+import Primitives
 
 {-# ANN consoleInput AllowRecursion #-}
 

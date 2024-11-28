@@ -67,7 +67,8 @@ executable AsyncRattusTest
                       StrictUTCTime,
                       Testing,
                       ZippedWithTest,
-                      Console
+                      Console,
+                      Primitives
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

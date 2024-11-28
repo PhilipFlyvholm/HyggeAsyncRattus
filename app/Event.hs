@@ -14,6 +14,7 @@ import AsyncRattus.InternalPrimitives (Box (Box), O (..), singletonClock)
 import Behaviour hiding (filter, map)
 import Testing (getTimeUnsafe)
 import Prelude hiding (map)
+import Primitives
 
 -- | An event is a discrete time/value pairs 
 data Event a = !a :&: !(OT (Event a))
