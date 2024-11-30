@@ -9,7 +9,7 @@ module Behaviour where
 import AsyncRattus
 import AsyncRattus.Channels (Producer, getInput, setOutput)
 import Prelude hiding (map, zipWith)
-import StrictUTCTime (UTCTime', diffUTCTime', getCurrentStrictTime)
+import StrictUTCTime (diffUTCTime', getCurrentStrictTime)
 import Primitives
 
 data Behaviour a = !(Fun Time a) :+: !(OT (Behaviour a))
@@ -18,8 +18,7 @@ timeBehaviour :: Behaviour Time
 timeBehaviour = Fun (box id) :+: never
 
 map :: Box (a -> b) -> Behaviour a -> Behaviour b
-map f ((K a) :+: xs) = K (unbox f a) :+: delay (let (b' :* t) = adv xs in (map f b' :* t))
-map f ((Fun t) :+: xs) = Fun (box (unbox f . unbox t)) :+: delay (let (b' :* t'') = adv xs in (map f b' :* t''))
+map f (x :+: xs) = applyF f x :+: delay (let (b' :* t) = adv xs in (map f b' :* t))
 
 filter :: Box (a -> Bool) -> Behaviour a -> Behaviour (Maybe' a)
 filter f = map (box (\x -> if unbox f x then Just' x else Nothing'))
