@@ -1,5 +1,4 @@
 {-# OPTIONS -fplugin=AsyncRattus.Plugin #-}
-{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Avoid lambda" #-}
@@ -7,7 +6,6 @@
 module Behaviour where
 
 import AsyncRattus
-import AsyncRattus.Channels (Producer, getInput, setOutput)
 import Prelude hiding (map, zipWith)
 import StrictUTCTime (diffUTCTime', getCurrentStrictTime)
 import Primitives
@@ -53,18 +51,3 @@ startTimerBehaviour = do
   start <- getCurrentStrictTime
   let b = K start :+: never
   return $ zipWith (box (\currentTime startTime -> round (diffUTCTime' currentTime startTime))) timeBehaviour b
-
-getInputWithTime :: IO (Box (OT a) :* (a -> IO ()))
-getInputWithTime = do
-  (b :* f) <- getInput
-  return
-    ( b :* \a -> do
-        t <- getCurrentStrictTime
-        f (a :* t)
-    )
-    
-mkInputWithTime :: (Producer p a) => p -> IO (Box (OT a))
-mkInputWithTime p = do
-  (out :* cb) <- getInputWithTime
-  setOutput p cb
-  return out

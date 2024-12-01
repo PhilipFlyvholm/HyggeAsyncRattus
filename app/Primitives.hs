@@ -5,7 +5,8 @@
 module Primitives where
 
 import AsyncRattus
-import StrictUTCTime (UTCTime')
+import StrictUTCTime (UTCTime', getCurrentStrictTime)
+import AsyncRattus.Channels (Producer, getInput, setOutput)
 
 type Time = UTCTime'
 
@@ -20,3 +21,18 @@ apply (Fun f) = unbox f
 applyF :: Box (a -> b) -> Fun t a -> Fun t b
 applyF f (K a) = K (unbox f a)
 applyF f (Fun t) = Fun (box (unbox f . unbox t))
+
+getInputWithTime :: IO (Box (OT a) :* (a -> IO ()))
+getInputWithTime = do
+  (b :* f) <- getInput
+  return
+    ( b :* \a -> do
+        t <- getCurrentStrictTime
+        f (a :* t)
+    )
+    
+mkInputWithTime :: (Producer p a) => p -> IO (Box (OT a))
+mkInputWithTime p = do
+  (out :* cb) <- getInputWithTime
+  setOutput p cb
+  return out
