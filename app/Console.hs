@@ -51,7 +51,7 @@ startConsole = do
   startTimer :: Behaviour Int <- Behaviour.startTimerBehaviour
   lastReset :: Behaviour Int <- do
         n <- getJustValues (unbox <$> triggerAwaitIO (box (\_ n -> n)) resetEvent startTimer)
-        let beh = mkBehaviourAwait n
+        let beh = stepperAwait n
         return (switch (K 0 :+: never) beh)
   let currentTimer :: Behaviour Int = Behaviour.zipWith (box (-)) startTimer lastReset
 

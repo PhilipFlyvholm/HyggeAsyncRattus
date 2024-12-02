@@ -86,11 +86,11 @@ mkEvent b = delay (let (v :* t) = adv (unbox b) in ((v :&: mkEvent b) :* t))
 mkBoxEvent :: Box (OT a) -> Box (OT (Event a))
 mkBoxEvent b = box (mkEvent b)
 
-mkBehaviour :: Event a -> Behaviour a
-mkBehaviour (a :&: as) = K a :+: delay (let (b' :* t) = adv as in (mkBehaviour b' :* t))
+stepper :: Event a -> Behaviour a
+stepper (a :&: as) = K a :+: delay (let (b' :* t) = adv as in (stepper b' :* t))
 
-mkBehaviourAwait :: OT (Event a) -> OT (Behaviour a)
-mkBehaviourAwait as = delay (let (e :* t) = adv as in (mkBehaviour e :* t))
+stepperAwait :: OT (Event a) -> OT (Behaviour a)
+stepperAwait as = delay (let (e :* t) = adv as in (stepper e :* t))
 
 
 timer :: Int -> Box (OT ())
