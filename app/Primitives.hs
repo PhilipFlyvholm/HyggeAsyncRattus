@@ -12,6 +12,9 @@ type Time = UTCTime'
 
 type OT a = O (a :* Time)
 
+mapOT :: Box (a -> b) -> OT a -> OT b
+mapOT f later = delay (let (v :* t) = adv later in (unbox f v :* t))
+
 data Fun t a = K !a | Fun !(Box (t -> a))
 
 apply :: Fun t a -> (t -> a)

@@ -22,6 +22,10 @@ data Event a = !a :&: !(OT (Event a))
 -- | Event wrapper for Maybe'
 newtype EventMaybe a = EventMaybe (Event (Maybe' a))
 
+instance Producer (EventMaybe a :* t) a where
+  getCurrent (EventMaybe p :* _) = current p
+  getNext (EventMaybe p :* _) cb = cb (delay (let (b :* _) = adv (future p) in EventMaybe b))
+
 instance Producer (EventMaybe a) a where
   getCurrent (EventMaybe p) = current p
   getNext (EventMaybe p) cb = cb (delay (let (b :* _) = adv (future p) in EventMaybe b))
@@ -43,11 +47,11 @@ future :: Event a -> OT (Event a)
 future (_ :&: xs) = xs
 
 -- | Trigger an behaviour when a event occurs.
-trigger :: (Stable a, Stable b) => Box (a -> b -> c) -> Event a -> Behaviour b -> IO (Box (Event (Maybe' c)))
+trigger :: (Stable a, Stable b) => Box (a -> b -> c) -> Event a -> Behaviour b -> IO (Box (Event c))
 trigger f (a :&: as) bs@(b :+: _) = do
   s <- triggerAwaitIO f as bs
   let l = box (unbox f a (apply b getTimeUnsafe))
-  return (box (Just' (unbox l) :&: unbox s))
+  return (box (unbox l :&: unbox s))
 
 triggerAwait :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> OT (Event (Maybe' c))
 triggerAwait f as (b :+: bs) =
@@ -59,11 +63,8 @@ triggerAwait f as (b :+: bs) =
     )
 
 -- make triggerAwaitIO
-triggerAwaitIO :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> IO (Box (OT (Event (Maybe' c))))
-triggerAwaitIO f as bs = do
-  let trigResult = triggerAwait f as bs
-  result <- mkInputWithTime trigResult
-  return (box (mkEvent result))
+triggerAwaitIO :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> IO (Box (OT (Event c)))
+triggerAwaitIO f as bs = mkInputEvent $ mapOT (box EventMaybe) (triggerAwait f as bs)
 
 map :: Box (a -> b) -> Event a -> Event b
 map f (a :&: xs) = unbox f a :&: delay (let (b' :* t'') = adv xs in (map f b' :* t''))
