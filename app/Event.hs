@@ -54,7 +54,6 @@ trigger f (a :&: as) bs@(b :+: _) = do
   return (box (unbox l :&: unbox s))
 
 
--- make triggerAwaitIO
 triggerAwait :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> IO (Box (OT (Event c)))
 triggerAwait f a bb = mkInputEvent $ mapOT (box EventMaybe) (trig f a bb) where
   trig :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> OT (Event (Maybe' c))
