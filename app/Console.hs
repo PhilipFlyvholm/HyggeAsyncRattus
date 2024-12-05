@@ -49,12 +49,12 @@ startConsole = do
 
   startTimer :: Behaviour Int <- Behaviour.startTimerBehaviour
   lastReset :: Behaviour Int <- do
-        n <- unbox <$> triggerAwaitIO (box (\_ n -> n)) resetEvent startTimer
+        n <- unbox <$> triggerAwait (box (\_ n -> n)) resetEvent startTimer
         let beh = stepperAwait n
         return (switch (K 0 :+: never) beh)
   let currentTimer :: Behaviour Int = Behaviour.zipWith (box (-)) startTimer lastReset
 
-  showTimer :: OT (Event Int) <- unbox <$> triggerAwaitIO (box (\_ n -> n)) showEvent currentTimer
+  showTimer :: OT (Event Int) <- unbox <$> triggerAwait (box (\_ n -> n)) showEvent currentTimer
 
   setPrint showTimer
 

@@ -49,22 +49,22 @@ future (_ :&: xs) = xs
 -- | Trigger an behaviour when a event occurs.
 trigger :: (Stable a, Stable b) => Box (a -> b -> c) -> Event a -> Behaviour b -> IO (Box (Event c))
 trigger f (a :&: as) bs@(b :+: _) = do
-  s <- triggerAwaitIO f as bs
+  s <- triggerAwait f as bs
   let l = box (unbox f a (apply b getTimeUnsafe))
   return (box (unbox l :&: unbox s))
 
-triggerAwait :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> OT (Event (Maybe' c))
-triggerAwait f as (b :+: bs) =
-  delay
-    ( case select as bs of
-        Fst (a' :&: as' :* t) bs' -> Just' (unbox f a' (apply b t)) :&: triggerAwait f as' (b :+: bs') :* t
-        Snd as' (bs' :* t) -> Nothing' :&: triggerAwait f as' bs' :* t
-        Both (a' :&: as' :* at) (b' :+: bs' :* bt) -> Just' (unbox f a' (apply b' bt)) :&: triggerAwait f as' (b' :+: bs') :* max at bt
-    )
 
 -- make triggerAwaitIO
-triggerAwaitIO :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> IO (Box (OT (Event c)))
-triggerAwaitIO f as bs = mkInputEvent $ mapOT (box EventMaybe) (triggerAwait f as bs)
+triggerAwait :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> IO (Box (OT (Event c)))
+triggerAwait f a bb = mkInputEvent $ mapOT (box EventMaybe) (trig f a bb) where
+  trig :: (Stable b) => Box (a -> b -> c) -> OT (Event a) -> Behaviour b -> OT (Event (Maybe' c))
+  trig f' as (b :+: bs) =
+    delay
+      ( case select as bs of
+          Fst (a' :&: as' :* t) bs' -> Just' (unbox f' a' (apply b t)) :&: trig f' as' (b :+: bs') :* t
+          Snd as' (bs' :* t) -> Nothing' :&: trig f' as' bs' :* t
+          Both (a' :&: as' :* at) (b' :+: bs' :* bt) -> Just' (unbox f' a' (apply b' bt)) :&: trig f' as' (b' :+: bs') :* max at bt
+      )
 
 map :: Box (a -> b) -> Event a -> Event b
 map f (a :&: xs) = unbox f a :&: delay (let (b' :* t'') = adv xs in (map f b' :* t''))
