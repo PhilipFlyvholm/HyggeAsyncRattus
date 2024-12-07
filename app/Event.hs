@@ -10,7 +10,6 @@ module Event where
 
 import AsyncRattus
 import AsyncRattus.Channels (Producer, getCurrent, getNext)
-import AsyncRattus.InternalPrimitives (Box (Box), O (..), singletonClock)
 import Behaviour hiding (filter, map)
 import Testing (getTimeUnsafe)
 import Prelude hiding (map)
@@ -91,16 +90,6 @@ stepper (a :&: as) = K a :+: delay (let (b' :* t) = adv as in (stepper b' :* t))
 
 stepperAwait :: OT (Event a) -> OT (Behaviour a)
 stepperAwait as = delay (let (e :* t) = adv as in (stepper e :* t))
-
-
-timer :: Int -> Box (OT ())
-timer d = Box (Delay (singletonClock (d `max` 10)) (\_ -> () :* getTimeUnsafe))
-
-everySecondEvent :: Event ()
-everySecondEvent = () :&: mkEvent everySecond
-
-everySecond :: Box (OT ())
-everySecond = timer 1000000
 
 getInputEvent :: IO (Box (OT (Event a)) :* (a -> IO ()))
 getInputEvent = do
