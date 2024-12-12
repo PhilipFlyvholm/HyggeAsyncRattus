@@ -22,19 +22,19 @@ filter :: Box (a -> Bool) -> Behaviour a -> Behaviour (Maybe' a)
 filter f = map (box (\x -> if unbox f x then Just' x else Nothing'))
 
 zipWith :: (Stable a, Stable b) => Box (a -> b -> c) -> Behaviour a -> Behaviour b -> Behaviour c
-zipWith f (a :+: as) (b :+: bs) =
-  app a b
+zipWith f (x :+: xs) (y :+: ys) =
+  app x y
     :+: delay
-      ( case select as bs of
-          Fst (as' :* ast) lbs -> zipWith f as' (b :+: lbs) :* ast
-          Snd las (bs' :* bst) -> zipWith f (a :+: las) bs' :* bst
-          Both (as' :* ast) (bs' :* bst) -> zipWith f as' bs' :* max ast bst
+      ( case select xs ys of
+          Fst (xs' :* xst) lys -> zipWith f xs' (y :+: lys) :* xst
+          Snd lxs (ys' :* yst) -> zipWith f (x :+: lxs) ys' :* yst
+          Both (xs' :* xst) (ys' :* yst) -> zipWith f xs' ys' :* max xst yst
       )
   where
-    app (K a') (K b') = K (unbox f a' b')
-    app (Fun a') (Fun b') = Fun (box (\t -> unbox f (unbox a' t) (unbox b' t)))
-    app (Fun a') (K b') = Fun (box (\t -> unbox f (unbox a' t) b'))
-    app (K a') (Fun b') = Fun (box (unbox f a' . unbox b'))
+    app (K x') (K y') = K (unbox f x' y')
+    app (Fun x') (Fun y') = Fun (box (\t -> unbox f (unbox x' t) (unbox y' t)))
+    app (Fun x') (K y') = Fun (box (\t -> unbox f (unbox x' t) y'))
+    app (K x') (Fun y') = Fun (box (unbox f x' . unbox y'))
 
 switch :: Behaviour a -> OT (Behaviour a) -> Behaviour a
 switch (x :+: xs) d =
